@@ -19,8 +19,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup User Android SDK
+      - name: Setup Android SDK
         run: |
+          set -e
           SDK_DIR="$HOME/android-sdk"
           mkdir -p "$SDK_DIR/cmdline-tools" "$SDK_DIR/licenses"
 
@@ -38,18 +39,17 @@ jobs:
           yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_DIR" --licenses >/dev/null 2>&1 || true
           "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$SDK_DIR" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
-      - name: Ensure Gradle Wrapper exists
+      - name: Prepare Gradle & Build APK
         run: |
+          set -e
+          GRADLE_VERSION="8.7"
           if [ ! -f ./gradlew ]; then
-            GRADLE_VERSION="8.7"
             curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o /tmp/gradle.zip
             unzip -q /tmp/gradle.zip -d /tmp/gradle-dist
             /tmp/gradle-dist/gradle-${GRADLE_VERSION}/bin/gradle wrapper --gradle-version "${GRADLE_VERSION}" --distribution-type bin --no-daemon
           fi
           chmod +x ./gradlew
-
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
